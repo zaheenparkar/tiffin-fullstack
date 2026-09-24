@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Zeba's Tiffin — Order Manager</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --maroon-deep:#3a0e14; --maroon:#5c1a21; --gold:#c79a2e; --gold-light:#f3e2ad;
+    --cream:#faf5e8; --paper:#fffdf8; --ink:#251512; --ink-soft:#6b5c53; --line:#e7dcc5;
+    --green:#2f6b3f; --green-bg:#e7f2e6; --amber:#a8760f; --amber-bg:#fbf0d6;
+    --red:#a5312f; --red-bg:#f7e6e3; --blue:#2f5a8b; --blue-bg:#e5edf6; --radius:10px;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;background:var(--cream);color:var(--ink);font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased;}
+  body{padding-bottom:env(safe-area-inset-bottom,0px); font-size:15px;}
+  h1,h2,h3{font-family:'Fraunces',serif;font-weight:600;margin:0;}
+  button{font-family:inherit;cursor:pointer;}
+  input,select,textarea{font-family:inherit;font-size:16px;}
+  a{color:inherit;}
+  #app{min-height:100vh;display:flex;flex-direction:column;}
+  .app-header{position:sticky;top:0;z-index:30;box-shadow:0 2px 8px rgba(0,0,0,0.12);}
+  .topbar{background:var(--maroon-deep);color:#fff;padding:12px 14px;padding-top:calc(12px + env(safe-area-inset-top,0px));display:flex;align-items:center;justify-content:space-between;gap:10px;}
+  .brand{display:flex;align-items:center;gap:9px;min-width:0;}
+  .brand-mark{width:32px;height:32px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;font-size:15px;color:var(--maroon-deep);flex-shrink:0;}
+  .brand-text{min-width:0;}
+  .brand-text h1{font-size:16px;color:#fff;line-height:1.1;white-space:nowrap;}
+  .brand-text span{font-size:10px;color:var(--gold-light);letter-spacing:0.3px;}
+  .who{display:flex;align-items:center;gap:8px;flex-shrink:0;}
+  .who .name{font-size:12.5px;color:var(--gold-light);display:none;}
+  @media(min-width:420px){ .who .name{display:inline;} }
+  .btn-logout{background:transparent;border:1px solid rgba(255,255,255,0.35);color:#fff;padding:7px 11px;border-radius:7px;font-size:12px;font-weight:500;min-height:36px;}
+  .tabs{display:flex;gap:2px;background:var(--maroon);overflow-x:auto;padding:0 8px;-webkit-overflow-scrolling:touch;}
+  .tab-btn{background:transparent;border:none;color:rgba(255,255,255,0.72);padding:12px 13px;font-size:13px;font-weight:600;white-space:nowrap;border-bottom:3px solid transparent;min-height:44px;}
+  .tab-btn.active{color:#fff;border-bottom-color:var(--gold);}
+  main{flex:1;max-width:760px;width:100%;margin:0 auto;padding:16px 12px 60px;}
+  .section-title{font-size:19px;margin-bottom:2px;}
+  .section-sub{font-size:12.5px;color:var(--ink-soft);margin-bottom:16px;}
+  .card{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:14px;margin-bottom:14px;}
+  .rule{border:none;border-top:1px solid var(--line);margin:16px 0;}
+  .field{margin-bottom:12px;}
+  .field label{display:block;font-size:12px;font-weight:600;color:var(--ink-soft);margin-bottom:5px;}
+  .field input, .field select{width:100%;padding:10px 11px;border:1px solid var(--line);border-radius:7px;font-size:15px;background:#fff;color:var(--ink);min-height:44px;}
+  .field input:focus, .field select:focus{outline:2px solid var(--gold);outline-offset:0;border-color:var(--gold);}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .btn{background:var(--maroon-deep);color:#fff;border:none;border-radius:8px;padding:12px 18px;font-size:14px;font-weight:600;min-height:44px;}
+  .btn.gold{background:var(--gold);color:var(--maroon-deep);}
+  .btn.ghost{background:transparent;color:var(--maroon-deep);border:1px solid var(--line);}
+  .btn.small{padding:8px 12px;font-size:12.5px;border-radius:6px;min-height:38px;}
+  .btn:disabled{opacity:0.45;cursor:not-allowed;}
+  .pill{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;padding:3px 9px;border-radius:99px;white-space:nowrap;}
+  .pill.pending{background:var(--amber-bg);color:var(--amber);}
+  .pill.confirmed{background:var(--green-bg);color:var(--green);}
+  .pill.declined{background:var(--red-bg);color:var(--red);}
+  .pill.delivered{background:#e7ecf2;color:#3a4a5c;}
+  .pill.sub{background:var(--gold-light);color:#6b4e05;}
+  .pill.paid{background:var(--green-bg);color:var(--green);}
+  .pill.unpaid{background:var(--red-bg);color:var(--red);}
+  .pill.dueflag{background:var(--blue-bg);color:var(--blue);}
+  .toggle-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 0;}
+  .toggle-row .tlabel{font-size:13.5px;font-weight:600;}
+  .toggle-row .tsub{font-size:11.5px;color:var(--ink-soft);}
+  .switch{position:relative;width:44px;height:26px;flex-shrink:0;}
+  .switch input{opacity:0;width:0;height:0;}
+  .slider{position:absolute;inset:0;background:#d8cdb8;border-radius:99px;transition:0.15s;cursor:pointer;}
+  .slider::before{content:"";position:absolute;width:20px;height:20px;left:3px;top:3px;background:#fff;border-radius:50%;transition:0.15s;}
+  .switch input:checked + .slider{background:var(--green);}
+  .switch input:checked + .slider::before{transform:translateX(18px);}
+  .empty{text-align:center;padding:30px 10px;color:var(--ink-soft);font-size:13.5px;}
+  .banner{padding:11px 14px;border-radius:8px;font-size:13px;font-weight:600;margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+  .banner.warn{background:var(--amber-bg);color:#7a5507;}
+  .banner.stop{background:var(--red-bg);color:var(--red);}
+  .banner.ok{background:var(--green-bg);color:var(--green);}
+  .banner.info{background:var(--blue-bg);color:var(--blue);}
+  .stepper{display:flex;align-items:center;gap:8px;}
+  .stepper button{width:34px;height:34px;border-radius:8px;border:1px solid var(--line);background:#fff;font-size:16px;font-weight:700;color:var(--maroon-deep);}
+  .stepper span{min-width:20px;text-align:center;font-weight:700;font-size:14px;}
+  .extra-item{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 0;border-bottom:1px solid var(--line);}
+  .extra-item:last-child{border-bottom:none;}
+  .extra-name{font-size:13.5px;font-weight:600;}
+  .extra-price{font-size:11.5px;color:var(--ink-soft);}
+  .tiffin-opt{border:1px solid var(--line);border-radius:9px;padding:11px;margin-bottom:10px;}
+  .tiffin-opt.on{border-color:var(--gold);background:#fffaf0;}
+  .tiffin-opt.disabled{opacity:0.45;}
+  .tiffin-head{display:flex;gap:10px;align-items:flex-start;}
+  .tiffin-head input[type=checkbox]{width:20px;height:20px;margin-top:2px;flex-shrink:0;}
+  .tiffin-meta{font-size:12.5px;color:var(--ink-soft);margin-top:2px;}
+  .tiffin-qty-row{display:flex;align-items:center;justify-content:space-between;margin-top:10px;padding-top:10px;border-top:1px dashed var(--line);}
+  .order-item{padding:12px 14px;margin-bottom:10px;background:var(--paper);border-radius:0 8px 8px 0;border:1px solid var(--line);border-left-width:4px;}
+  .order-item.pending{border-left-color:var(--amber);}
+  .order-item.confirmed{border-left-color:var(--green);}
+  .order-item.declined{border-left-color:var(--red);}
+  .order-item.delivered{border-left-color:#7a8ba0;}
+  .order-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:6px;flex-wrap:wrap;}
+  .order-top .who2{font-size:14px;font-weight:700;}
+  .order-badges{display:flex;gap:6px;flex-wrap:wrap;}
+  .order-when{font-size:11.5px;color:var(--ink-soft);margin-bottom:8px;}
+  .order-lines{font-size:13px;line-height:1.7;}
+  .order-total-row{display:flex;justify-content:space-between;font-size:13px;font-weight:700;margin-top:8px;padding-top:8px;border-top:1px dashed var(--line);}
+  .order-actions{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;}
+  .login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;background:radial-gradient(circle at 20% 10%, rgba(199,154,46,0.12), transparent 40%), var(--maroon-deep);}
+  .login-card{background:var(--paper);border-radius:14px;padding:28px 22px;max-width:360px;width:100%;box-shadow:0 20px 50px rgba(0,0,0,0.35);}
+  .login-brand{text-align:center;margin-bottom:20px;}
+  .login-brand .mark{width:50px;height:50px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;font-size:22px;margin:0 auto 10px;}
+  .login-brand h1{font-size:21px;color:var(--maroon-deep);}
+  .login-brand p{font-size:12.5px;color:var(--ink-soft);margin-top:4px;}
+  .login-error{color:var(--red);font-size:12.5px;margin-top:6px;min-height:16px;}
+  .subtabs{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap;}
+  .subtab{background:#fff;border:1px solid var(--line);border-radius:99px;padding:8px 13px;font-size:12px;font-weight:600;color:var(--ink-soft);min-height:36px;}
+  .subtab.active{background:var(--maroon-deep);border-color:var(--maroon-deep);color:#fff;}
+  table.plain{width:100%;border-collapse:collapse;font-size:13px;}
+  table.plain th{text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:0.4px;color:var(--ink-soft);padding:6px 5px;border-bottom:1px solid var(--line);white-space:nowrap;}
+  table.plain td{padding:8px 5px;border-bottom:1px solid var(--line);vertical-align:middle;}
+  .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -14px;padding:0 14px;}
+  .hint{font-size:11.5px;color:var(--ink-soft);margin-top:4px;}
+  .price-input{width:80px !important;}
+  .loading{display:flex;align-items:center;justify-content:center;min-height:60vh;color:var(--ink-soft);font-size:13.5px;}
+  @media(max-width:480px){ .row2{grid-template-columns:1fr;} }
+</style>
+</head>
+<body>
+<div id="app"><div class="loading">Loading…</div></div>
+
+<script>
+/* ============================ API CLIENT ============================ */
+const API_BASE = ''; // same-origin: backend serves this file, so relative paths work
+let TOKEN = localStorage.getItem('ztiffin_token') || null;
+
+async function api(path, method, body){
+  const headers = {'Content-Type':'application/json'};
+  if(TOKEN) headers['Authorization'] = 'Bearer '+TOKEN;
+  const res = await fetch(API_BASE+path, { method: method||'GET', headers, body: body?JSON.stringify(body):undefined });
+  let data = null;
+  try{ data = await res.json(); }catch(e){}
+  if(!res.ok){ throw new Error((data && data.error) || ('Request failed ('+res.status+')')); }
+  return data;
+}
+
+/* ============================ APP STATE ============================ */
+let STATE = { me:null, settings:null, dishOfDay:null, extras:[], customers:[], orders:[] };
+let currentTab = null;
+let orderFilter = 'pending';
+let customerCartExtras = {};
+let customerTiffin = { veg:{sel:false, qty:1}, nonveg:{sel:false, qty:1} };
+
+function money(n){ return '£' + Number(n).toFixed(2); }
+function fmtDateTime(iso){
+  const d = new Date(iso);
+  return d.toLocaleDateString(undefined,{weekday:'short',day:'numeric',month:'short'}) + ' · ' + d.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
+}
+function isoDate(d){ return d.toISOString().slice(0,10); }
+function addDays(d,n){ const r=new Date(d); r.setDate(r.getDate()+n); return r; }
+function toLocalInputValue(d){
+  const pad = n=>String(n).padStart(2,'0');
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+function dishActiveNow(dish){
+  if(!dish.name) return false;
+  if(dish.mode==='fixed') return true;
+  if(!dish.validUntil) return false;
+  return new Date() <= new Date(dish.validUntil);
+}
+function minOrderTime(){
+  const d = new Date(); d.setMinutes(d.getMinutes() + Math.round(STATE.settings.minLeadHours*60)); return d;
+}
+function subscriptionCoversType(user, type){
+  if(!user.subscription || !user.subscription.active) return false;
+  const s = user.subscription; const today = isoDate(new Date());
+  if(today < s.startDate || today > s.endDate) return false;
+  return s.type==='both' || s.type===type;
+}
+function tiffinLabel(type){ return type==='veg' ? 'Veg Tiffin' : 'Non-Veg Tiffin'; }
+
+/* client-side preview mirror of the server's authoritative pricing, for display only */
+function previewOrder(){
+  const user = STATE.me;
+  let budget = (user.subscription && user.subscription.active)
+    ? (user.subscription.includedQty ?? STATE.settings.subscriptionIncludedQty[user.subscription.type] ?? 0) : 0;
+  const items = [];
+  ['veg','nonveg'].forEach(type=>{
+    const sel = customerTiffin[type];
+    if(!sel.sel) return;
+    const dish = type==='veg' ? STATE.dishOfDay.veg : STATE.dishOfDay.nonVeg;
+    const covers = subscriptionCoversType(user, type);
+    const coveredQty = covers ? Math.min(budget, sel.qty) : 0;
+    budget -= coveredQty;
+    const chargedQty = sel.qty - coveredQty;
+    const unitPrice = STATE.settings.tiffinPricing[type] || 0;
+    items.push({ name: tiffinLabel(type)+(dish.name?' — '+dish.name:''), qty:sel.qty, coveredQty, chargedQty, unitPrice, lineTotal:chargedQty*unitPrice, coveredBySub:coveredQty>0 });
+  });
+  Object.entries(customerCartExtras).forEach(([id,qty])=>{
+    if(qty<=0) return;
+    const ex = STATE.extras.find(x=>x.id===id);
+    if(ex) items.push({ name:ex.name, qty, coveredQty:0, chargedQty:qty, unitPrice:ex.price, lineTotal:qty*ex.price, coveredBySub:false });
+  });
+  const total = items.reduce((s,it)=>s+it.lineTotal,0);
+  return {items, total};
+}
+
+/* ============================ BOOTSTRAP ============================ */
+async function loadBootstrap(){
+  const data = await api('/api/bootstrap','GET');
+  STATE = { ...STATE, ...data };
+}
+async function refresh(){ await loadBootstrap(); render(); }
+
+/* ============================ RENDER ROOT ============================ */
+async function render(){
+  const app = document.getElementById('app');
+  if(!TOKEN || !STATE.me){ app.innerHTML = loginView(); attachLoginHandlers(); return; }
+  if(STATE.me.role==='admin'){
+    if(!currentTab) currentTab = 'orders';
+    app.innerHTML = shell(STATE.me, adminTabs(), adminTabContent());
+  } else {
+    if(!currentTab) currentTab = 'order';
+    app.innerHTML = shell(STATE.me, customerTabs(), customerTabContent());
+  }
+  attachShellHandlers();
+}
+
+function shell(user, tabsHtml, contentHtml){
+  return `
+    <div class="app-header">
+      <div class="topbar">
+        <div class="brand"><div class="brand-mark">🍱</div>
+          <div class="brand-text"><h1>Zeba's Tiffin</h1><span>${user.role==='admin'?'Admin console':'Order your tiffin'}</span></div>
+        </div>
+        <div class="who"><span class="name">${user.name}</span><button class="btn-logout" id="logoutBtn">Log out</button></div>
+      </div>
+      <div class="tabs">${tabsHtml}</div>
+    </div>
+    <main>${contentHtml}</main>`;
+}
+
+/* ============================ LOGIN ============================ */
+function loginView(){
+  return `<div class="login-wrap"><div class="login-card">
+    <div class="login-brand"><div class="mark">🍱</div><h1>Zeba's Tiffin</h1><p>Sign in with the username &amp; password Zeba or Tabrez gave you.</p></div>
+    <div class="field"><label>Username</label><input id="loginUser" autocomplete="username"></div>
+    <div class="field"><label>Password</label><input id="loginPass" type="password" autocomplete="current-password"></div>
+    <button class="btn gold" style="width:100%" id="loginBtn">Log in</button>
+    <div class="login-error" id="loginErr"></div>
+  </div></div>`;
+}
+function attachLoginHandlers(){
+  const doLogin = async () => {
+    const u = document.getElementById('loginUser').value.trim();
+    const p = document.getElementById('loginPass').value;
+    const errEl = document.getElementById('loginErr');
+    errEl.textContent = '';
+    try{
+      const data = await api('/api/auth/login','POST',{username:u, password:p});
+      TOKEN = data.token; localStorage.setItem('ztiffin_token', TOKEN);
+      currentTab = null;
+      await refresh();
+    }catch(e){ errEl.textContent = e.message; }
+  };
+  document.getElementById('loginBtn').onclick = doLogin;
+  document.getElementById('loginPass').addEventListener('keydown', e=>{ if(e.key==='Enter') doLogin(); });
+}
+function attachShellHandlers(){
+  document.getElementById('logoutBtn').onclick = () => {
+    TOKEN=null; localStorage.removeItem('ztiffin_token'); STATE={me:null,settings:null,dishOfDay:null,extras:[],customers:[],orders:[]}; currentTab=null; render();
+  };
+  document.querySelectorAll('.tab-btn').forEach(btn=>{ btn.onclick = () => { currentTab = btn.dataset.tab; render(); }; });
+}
+
+/* ============================ CUSTOMER VIEWS ============================ */
+function customerTabs(){
+  const tabs=[['order','Order Tiffin'],['myorders','My Orders'],['subscription','Subscription']];
+  return tabs.map(([k,l])=>`<button class="tab-btn ${currentTab===k?'active':''}" data-tab="${k}">${l}</button>`).join('');
+}
+function customerTabContent(){
+  if(currentTab==='myorders') return customerOrdersView();
+  if(currentTab==='subscription') return customerSubscriptionView();
+  return customerOrderView();
+}
+
+function customerOrderView(){
+  const s = STATE.settings;
+  if(!s.orderingEnabled) return `<h2 class="section-title">Order Tiffin</h2><div class="banner stop">🚫 Ordering is closed by Zeba's Kitchen right now — please check back later.</div>`;
+  const veg = STATE.dishOfDay.veg, nonVeg = STATE.dishOfDay.nonVeg;
+  const vegOn = veg.available && dishActiveNow(veg);
+  const nvOn = nonVeg.available && dishActiveNow(nonVeg);
+  const minT = minOrderTime(); const defaultVal = new Date(minT.getTime()+15*60000);
+
+  let html = `<h2 class="section-title">Order Tiffin</h2>
+    <div class="section-sub">Orders need at least ${s.minLeadHours} hour${s.minLeadHours!==1?'s':''} notice · self pickup or delivery, no payment taken in the app</div>`;
+  if(!vegOn && !nvOn) html += `<div class="banner warn">⚠ Today's tiffin hasn't been set yet — you can still order snacks &amp; extras below.</div>`;
+
+  html += `<div class="card"><h3 style="font-size:15px;margin-bottom:10px;">Today's Tiffin</h3>`;
+  ['veg','nonveg'].forEach(type=>{
+    const dish = type==='veg' ? veg : nonVeg;
+    const on = type==='veg' ? vegOn : nvOn;
+    const covered = subscriptionCoversType(STATE.me, type);
+    const unitPrice = s.tiffinPricing[type] || 0;
+    const sel = customerTiffin[type];
+    html += `<div class="tiffin-opt ${sel.sel?'on':''} ${!on?'disabled':''}">
+      <label class="tiffin-head">
+        <input type="checkbox" class="tiffinSel" data-type="${type}" ${!on?'disabled':''} ${sel.sel?'checked':''}>
+        <span style="flex:1;">
+          <div style="font-weight:700;font-size:14px;">${type==='veg'?'🌱':'🍗'} ${tiffinLabel(type)}
+            ${covered?'<span class="pill sub">In subscription</span>':`<span class="pill dueflag">${money(unitPrice)}/portion</span>`}
+          </div>
+          <div class="tiffin-meta">${dish.name ? dish.name : (on?'Set — details on order':'Not available today')}</div>
+        </span>
+      </label>
+      ${sel.sel ? `<div class="tiffin-qty-row"><span style="font-size:12.5px;font-weight:600;color:var(--ink-soft);">Quantity</span>
+          <div class="stepper"><button type="button" class="tQtyMinus" data-type="${type}">−</button><span>${sel.qty}</span><button type="button" class="tQtyPlus" data-type="${type}">+</button></div>
+        </div>` : ''}
+    </div>`;
+  });
+  html += `</div>`;
+
+  html += `<div class="card"><h3 style="font-size:15px;margin-bottom:10px;">Add Snacks &amp; Extras <span style="font-weight:400;color:var(--ink-soft);font-size:12px;">(à la carte — always billed separately, even with a subscription)</span></h3>${extrasByCategory()}</div>`;
+
+  html += `<div class="card"><h3 style="font-size:15px;margin-bottom:10px;">When do you need it?</h3>
+    <div class="field"><label>Date &amp; time</label><input type="datetime-local" id="requestedFor" value="${toLocalInputValue(defaultVal)}" min="${toLocalInputValue(minT)}"></div>
+    <div class="hint">Earliest available: ${fmtDateTime(minT.toISOString())}</div></div>`;
+
+  const preview = previewOrder();
+  html += `<div class="card">
+    ${preview.items.length ? preview.items.map(it=>`<div style="display:flex;justify-content:space-between;font-size:13px;padding:3px 0;">
+        <span>${it.name}${it.qty>1?' ×'+it.qty:''}</span>
+        <span>${it.coveredQty>0 && it.chargedQty>0 ? `${it.coveredQty} covered, ${it.chargedQty} chargeable — ${money(it.lineTotal)}` : (it.coveredBySub ? '<span class="pill sub">Subscription</span>' : money(it.lineTotal))}</span>
+      </div>`).join('') : '<div class="hint">Nothing added yet.</div>'}
+    <div class="order-total-row"><span>Amount due at delivery</span><span>${money(preview.total)}</span></div>
+    <div class="hint" style="margin-bottom:10px;">No payment is taken in the app — this is settled with Zeba / Tabrez directly.</div>
+    <button class="btn gold" style="width:100%" id="placeOrderBtn">Place order</button>
+    <div class="login-error" id="orderErr"></div>
+  </div>`;
+  return html;
+}
+
+function extrasByCategory(){
+  const cats = {};
+  STATE.extras.filter(e=>e.available).forEach(e=>{ (cats[e.category]=cats[e.category]||[]).push(e); });
+  if(Object.keys(cats).length===0) return `<div class="empty">No extras available right now.</div>`;
+  return Object.entries(cats).map(([cat,items])=>`
+    <div style="margin-bottom:6px;">
+      <div style="font-size:11px;font-weight:700;letter-spacing:0.3px;color:var(--gold);margin:8px 0 2px;">${cat.toUpperCase()}</div>
+      ${items.map(e=>{
+        const qty = customerCartExtras[e.id]||0;
+        return `<div class="extra-item"><div><div class="extra-name">${e.name}</div><div class="extra-price">${money(e.price)}</div></div>
+          <div class="stepper"><button type="button" class="exMinus" data-id="${e.id}">−</button><span>${qty}</span><button type="button" class="exPlus" data-id="${e.id}">+</button></div></div>`;
+      }).join('')}
+    </div>`).join('');
+}
+
+function outstandingFor(userId){
+  const mine = STATE.orders.filter(o=> (STATE.me.role==='admin' ? o.userId===userId : true) && o.paymentStatus==='unpaid');
+  return { count: mine.length, total: mine.reduce((s,o)=>s+o.total,0) };
+}
+
+function customerOrdersView(){
+  const mine = STATE.orders.slice().sort((a,b)=> new Date(b.placedAt)-new Date(a.placedAt));
+  const out = outstandingFor(STATE.me.id);
+  let html = `<h2 class="section-title">My Orders</h2>`;
+  if(out.count>0) html += `<div class="banner info">💷 You have ${money(out.total)} outstanding across ${out.count} order${out.count!==1?'s':''} — this can be settled together with your subscription payment.</div>`;
+  if(mine.length===0) return html + `<div class="empty">No orders yet — place your first tiffin order from the Order tab.</div>`;
+  html += `<div class="section-sub">Pending orders can be pushed straight to Zeba's Kitchen's WhatsApp with one tap.</div>`;
+  return html + mine.map(o=>orderCard(o,false)).join('');
+}
+
+function formatWhatsAppNumber(phone){
+  let p=(phone||'').replace(/\s+/g,''); if(p.startsWith('0')) p='44'+p.slice(1); return p.replace(/\D/g,'');
+}
+function buildWhatsAppOrderLink(o){
+  const admin = { phone: '07954414208' }; // Zeba's Kitchen contact
+  const lines = o.items.map(it=>`${it.name}${it.qty>1?' x'+it.qty:''}`).join(', ');
+  const text = `New tiffin order from ${o.customerName}\nFor: ${fmtDateTime(o.requestedFor)}\nItems: ${lines}\nAmount due: ${money(o.total)}\nOrder ref: ${o.id}`;
+  return `https://wa.me/${formatWhatsAppNumber(admin.phone)}?text=${encodeURIComponent(text)}`;
+}
+
+function itemLine(it){
+  if(it.type==='tiffin' && it.coveredQty>0 && it.chargedQty>0) return `• ${it.name} ×${it.qty} — ${it.coveredQty} covered <span class="pill sub">Subscription</span>, ${it.chargedQty} chargeable (${money(it.lineTotal)})`;
+  if(it.coveredBySub) return `• ${it.name}${it.qty>1?' ×'+it.qty:''} <span class="pill sub">Subscription</span>`;
+  return `• ${it.name}${it.qty>1?' ×'+it.qty:''} — ${money(it.lineTotal)}`;
+}
+
+function orderCard(o, isAdmin){
+  const lines = o.items.map(itemLine).join('<br>');
+  const waLink = (!isAdmin && o.status==='pending') ? buildWhatsAppOrderLink(o) : null;
+  let statusActions = '';
+  if(isAdmin){
+    if(o.status==='pending') statusActions += `<button class="btn small" data-act="confirm" data-id="${o.id}">Confirm</button><button class="btn small ghost" data-act="decline" data-id="${o.id}">Decline</button>`;
+    else if(o.status==='confirmed') statusActions += `<button class="btn small ghost" data-act="delivered" data-id="${o.id}">Mark delivered</button>`;
+    if(o.total>0) statusActions += `<button class="btn small ${o.paymentStatus==='paid'?'ghost':''}" data-payact="${o.paymentStatus==='paid'?'unpaid':'paid'}" data-id="${o.id}">${o.paymentStatus==='paid'?'Mark unpaid':'Mark paid'}</button>`;
+  }
+  const paymentPill = o.total>0 ? `<span class="pill ${o.paymentStatus==='paid'?'paid':'unpaid'}">${o.paymentStatus==='paid'?'Paid':'Payment due'}</span>` : `<span class="pill sub">Fully covered</span>`;
+  return `<div class="order-item ${o.status}">
+    <div class="order-top"><span class="who2">${o.customerName}</span><div class="order-badges"><span class="pill ${o.status}">${o.status}</span>${paymentPill}</div></div>
+    <div class="order-when">Requested for ${fmtDateTime(o.requestedFor)} · placed ${fmtDateTime(o.placedAt)}</div>
+    <div class="order-lines">${lines}</div>
+    ${o.total>0 ? `<div class="order-total-row"><span>Amount due</span><span>${money(o.total)}</span></div>` : ''}
+    ${(statusActions||waLink) ? `<div class="order-actions">${waLink?`<a class="btn small gold" href="${waLink}" target="_blank" rel="noopener" style="text-decoration:none;display:inline-flex;align-items:center;">📲 Notify on WhatsApp</a>`:''}${statusActions}</div>` : ''}
+  </div>`;
+}
+
+function customerSubscriptionView(){
+  const s = STATE.me.subscription; const sp = STATE.settings.subscriptionPricing;
+  const out = outstandingFor(STATE.me.id);
+  if(!s || !s.active){
+    return `<h2 class="section-title">Subscription</h2><div class="card">
+      <p style="font-size:13.5px;">You're on a one-time / pay-as-you-go basis — each tiffin order is priced individually and confirmed by Zeba or Tabrez. Ask them if you'd like to move to a monthly subscription.</p>
+      <table class="plain" style="margin-top:10px;"><tr><th>Plan</th><th>Price / month</th></tr>
+        <tr><td>Veg only</td><td>${money(sp.veg)}</td></tr><tr><td>Non-Veg only</td><td>${money(sp.nonveg)}</td></tr><tr><td>Veg &amp; Non-Veg</td><td>${money(sp.both)}</td></tr>
+      </table></div>`;
+  }
+  const covered = s.type==='both' ? 'Veg &amp; Non-Veg' : (s.type==='veg'?'Veg only':'Non-Veg only');
+  return `<h2 class="section-title">Subscription</h2><div class="card">
+    <div class="order-badges" style="margin-bottom:10px;">
+      <span class="pill sub">Active subscription</span>
+      <span class="pill ${s.paymentStatus==='paid'?'paid':'unpaid'}">${s.paymentStatus==='paid'?'Payment received':'Payment due'}</span>
+    </div>
+    <table class="plain">
+      <tr><th>Covers</th><td>${covered}</td></tr>
+      <tr><th>Price</th><td>${money(sp[s.type])} / month</td></tr>
+      <tr><th>Tiffins included / order</th><td>${s.includedQty ?? STATE.settings.subscriptionIncludedQty[s.type]}</td></tr>
+      <tr><th>Start</th><td>${s.startDate}</td></tr>
+      <tr><th>End</th><td>${s.endDate}</td></tr>
+    </table>
+    <p class="hint" style="margin-top:10px;">Tiffin orders within your included quantity, of a covered type and inside this window, need no payment tracking. Anything past that quantity, the other tiffin type, or any snack/biryani/extra is always billed à la carte.</p>
+    ${out.count>0 ? `<div class="banner info" style="margin-top:10px;margin-bottom:0;">💷 ${money(out.total)} outstanding across ${out.count} order${out.count!==1?'s':''} — Zeba/Tabrez can settle this together with your subscription payment.</div>` : ''}
+  </div>`;
+}
+
+/* ============================ ADMIN VIEWS ============================ */
+function adminTabs(){
+  const tabs=[['orders','Orders'],['dish','Dish of the Day'],['menu','Menu & Extras'],['customers','Customers'],['settings','Settings']];
+  return tabs.map(([k,l])=>`<button class="tab-btn ${currentTab===k?'active':''}" data-tab="${k}">${l}</button>`).join('');
+}
+function adminTabContent(){
+  if(currentTab==='dish') return adminDishView();
+  if(currentTab==='menu') return adminMenuView();
+  if(currentTab==='customers') return adminCustomersView();
+  if(currentTab==='settings') return adminSettingsView();
+  return adminOrdersView();
+}
+
+function adminOrdersView(){
+  const filters=['pending','confirmed','declined','delivered','all'];
+  const sub = filters.map(f=>`<button class="subtab ${orderFilter===f?'active':''}" data-filter="${f}">${f[0].toUpperCase()+f.slice(1)}</button>`).join('');
+  let list = STATE.orders.slice().sort((a,b)=> new Date(b.placedAt)-new Date(a.placedAt));
+  if(orderFilter!=='all') list = list.filter(o=>o.status===orderFilter);
+  const body = list.length===0 ? `<div class="empty">No ${orderFilter==='all'?'':orderFilter} orders.</div>` : list.map(o=>orderCard(o,true)).join('');
+  return `<h2 class="section-title">Orders</h2><div class="section-sub">Confirm orders that can be cooked &amp; delivered on time, mark them delivered, and track who's paid.</div><div class="subtabs">${sub}</div>${body}`;
+}
+
+function adminDishView(){
+  return `<h2 class="section-title">Dish of the Day</h2><div class="section-sub">Set what's cooking, and how long it should stay on the menu.</div>
+    ${dishForm('veg','🌱 Veg Tiffin', STATE.dishOfDay.veg)}${dishForm('nonVeg','🍗 Non-Veg Tiffin', STATE.dishOfDay.nonVeg)}`;
+}
+function dishForm(key, label, dish){
+  const active = dishActiveNow(dish);
+  return `<div class="card"><h3 style="font-size:15px;margin-bottom:2px;">${label}</h3>
+    <div class="hint" style="margin-bottom:10px;">${dish.name ? (active?'Currently live to customers':'Set, but past its validity — update it') : 'Nothing set yet'}</div>
+    <div class="field"><label>Dish name</label><input id="dishName_${key}" value="${dish.name||''}" placeholder="e.g. Rajma Chawal"></div>
+    <div class="field"><label>Keep this on the menu for</label><select id="dishMode_${key}">
+      <option value="daily" ${dish.mode==='daily'?'selected':''}>Today only</option>
+      <option value="weekly" ${dish.mode==='weekly'?'selected':''}>This week</option>
+      <option value="fixed" ${dish.mode==='fixed'?'selected':''}>Until I change it</option></select></div>
+    <div class="toggle-row"><div><div class="tlabel">Available for ordering</div><div class="tsub">Turn off if it can't be cooked today</div></div>
+      <label class="switch"><input type="checkbox" id="dishAvail_${key}" ${dish.available?'checked':''}><span class="slider"></span></label></div>
+    <button class="btn gold" style="width:100%;margin-top:8px;" data-savedish="${key}">Save</button></div>`;
+}
+
+function adminMenuView(){
+  const rows = STATE.extras.map(e=>`<tr>
+      <td><input class="extraEdit" data-id="${e.id}" data-field="name" value="${e.name}" style="width:140px;border:1px solid var(--line);border-radius:6px;padding:6px 7px;font-size:13px;"></td>
+      <td><input class="extraEdit" data-id="${e.id}" data-field="category" value="${e.category}" style="width:100px;border:1px solid var(--line);border-radius:6px;padding:6px 7px;font-size:13px;"></td>
+      <td><input class="extraEdit price-input" data-id="${e.id}" data-field="price" type="number" min="0" step="0.5" value="${e.price}" style="border:1px solid var(--line);border-radius:6px;padding:6px 7px;font-size:13px;"></td>
+      <td><label class="switch"><input type="checkbox" class="extraToggle" data-id="${e.id}" ${e.available?'checked':''}><span class="slider"></span></label></td>
+      <td><button class="btn small ghost" data-delextra="${e.id}">Remove</button></td></tr>`).join('');
+  return `<h2 class="section-title">Menu &amp; Extras</h2><div class="section-sub">Biryanis, snacks and extras customers can add to any order. Edit any field directly — changes save as you leave the box.</div>
+    <div class="card"><div class="table-wrap"><table class="plain"><tr><th>Item</th><th>Category</th><th>Price (£)</th><th>On</th><th></th></tr>${rows}</table></div></div>
+    <div class="card"><h3 style="font-size:15px;margin-bottom:10px;">Add a new item</h3>
+      <div class="row2"><div class="field"><label>Name</label><input id="newExtraName" placeholder="e.g. Chicken 65"></div><div class="field"><label>Category</label><input id="newExtraCat" placeholder="e.g. Snacks"></div></div>
+      <div class="field"><label>Price (£)</label><input id="newExtraPrice" type="number" min="0" step="0.5" placeholder="3.00"></div>
+      <button class="btn gold" id="addExtraBtn">Add item</button></div>`;
+}
+
+function adminCustomersView(){
+  const rows = STATE.customers.map(c=>{
+    const s = c.subscription; const subText = s && s.active ? `${s.type} · till ${s.endDate}` : 'One-time buyer';
+    const payPill = s && s.active ? `<span class="pill ${s.paymentStatus==='paid'?'paid':'unpaid'}">${s.paymentStatus==='paid'?'Paid':'Due'}</span>` : '';
+    const out = outstandingFor(c.id);
+    return `<tr><td>${c.name}<div class="hint">@${c.username}</div></td><td>${c.phone||'—'}</td><td>${subText} ${payPill}</td>
+      <td>${out.count>0 ? money(out.total) : '—'}</td><td><button class="btn small ghost" data-editcust="${c.id}">Manage</button></td></tr>`;
+  }).join('');
+  const sp = STATE.settings.subscriptionPricing, siq = STATE.settings.subscriptionIncludedQty;
+  return `<h2 class="section-title">Customers</h2><div class="section-sub">Create the login for a customer and manage their subscription.</div>
+    <div class="card"><div class="table-wrap"><table class="plain"><tr><th>Customer</th><th>Phone</th><th>Subscription</th><th>Outstanding</th><th></th></tr>${rows || '<tr><td colspan="5" class="empty">No customers yet</td></tr>'}</table></div></div>
+    <div class="card"><h3 style="font-size:15px;margin-bottom:10px;">Add a new customer</h3>
+      <div class="row2"><div class="field"><label>Full name</label><input id="newCustName" placeholder="Customer name"></div><div class="field"><label>Phone</label><input id="newCustPhone" placeholder="07..."></div></div>
+      <div class="row2"><div class="field"><label>Username</label><input id="newCustUser" placeholder="lowercase, no spaces"></div><div class="field"><label>Password</label><input id="newCustPass" placeholder="temporary password"></div></div>
+      <div class="field"><label>Buyer type</label><select id="newCustBuyerType"><option value="onetime">One-time buyer</option><option value="subscription">Subscriber</option></select></div>
+      <div id="newCustSubFields" style="display:none;">
+        <div class="field"><label>Covers</label><select id="newCustSubType">
+          <option value="veg">Veg only (${money(sp.veg)}/mo, ${siq.veg} included)</option>
+          <option value="nonveg">Non-Veg only (${money(sp.nonveg)}/mo, ${siq.nonveg} included)</option>
+          <option value="both">Veg &amp; Non-Veg (${money(sp.both)}/mo, ${siq.both} included)</option></select></div>
+        <div class="row2"><div class="field"><label>Start date</label><input type="date" id="newCustSubStart" value="${isoDate(new Date())}"></div><div class="field"><label>End date</label><input type="date" id="newCustSubEnd" value="${isoDate(addDays(new Date(),30))}"></div></div>
+        <div class="field"><label>Tiffins included per order</label><input type="number" min="0" step="1" id="newCustSubQty" value="1"></div>
+        <div class="field"><label>Subscription payment</label><select id="newCustSubPay"><option value="due">Payment due</option><option value="paid">Paid</option></select></div>
+      </div>
+      <button class="btn gold" id="addCustBtn">Create account</button><div class="login-error" id="custErr"></div></div>
+    <div id="editCustPanel"></div>`;
+}
+function editCustomerPanel(custId){
+  const c = STATE.customers.find(u=>u.id===custId); if(!c) return '';
+  const sp = STATE.settings.subscriptionPricing;
+  const s = c.subscription || {active:false, type:'veg', startDate:isoDate(new Date()), endDate:isoDate(addDays(new Date(),30)), paymentStatus:'due', includedQty:1};
+  const out = outstandingFor(c.id);
+  return `<div class="card"><h3 style="font-size:15px;margin-bottom:10px;">Buyer type — ${c.name}</h3>
+    <div class="field"><label>Buyer type</label><select id="subActive">
+      <option value="onetime" ${!s.active?'selected':''}>One-time buyer</option><option value="subscription" ${s.active?'selected':''}>Subscriber</option></select></div>
+    <div id="editSubFields" style="display:${s.active?'block':'none'};">
+      <div class="field"><label>Covers</label><select id="subType">
+        <option value="veg" ${s.type==='veg'?'selected':''}>Veg only (${money(sp.veg)}/mo)</option>
+        <option value="nonveg" ${s.type==='nonveg'?'selected':''}>Non-Veg only (${money(sp.nonveg)}/mo)</option>
+        <option value="both" ${s.type==='both'?'selected':''}>Veg &amp; Non-Veg (${money(sp.both)}/mo)</option></select></div>
+      <div class="row2"><div class="field"><label>Start date</label><input type="date" id="subStart" value="${s.startDate}"></div><div class="field"><label>End date</label><input type="date" id="subEnd" value="${s.endDate}"></div></div>
+      <div class="field"><label>Tiffins included per order</label><input type="number" min="0" step="1" id="subQty" value="${s.includedQty ?? 1}"></div>
+      <div class="hint">Extra tiffins beyond this, in a single order, are charged at the one-time price — never the monthly rate.</div>
+      <div class="field" style="margin-top:10px;"><label>Subscription payment</label><select id="subPay">
+        <option value="due" ${s.paymentStatus!=='paid'?'selected':''}>Payment due</option><option value="paid" ${s.paymentStatus==='paid'?'selected':''}>Paid</option></select></div>
+    </div>
+    ${out.count>0 ? `<div class="banner info">💷 ${money(out.total)} unpaid across ${out.count} order${out.count!==1?'s':''}.</div>` : ''}
+    <div class="hint" style="margin-bottom:10px;">Switching to "One-time buyer" turns off subscription coverage — every tiffin order then needs individual confirmation and payment tracking, same as extras.</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button class="btn gold" id="saveSubBtn" data-id="${c.id}">Save</button>
+      ${(out.count>0 || (s.active && s.paymentStatus!=='paid')) ? `<button class="btn" id="settleBtn" data-id="${c.id}">Settle everything now</button>` : ''}
+      <button class="btn ghost" id="closeCustBtn">Close</button>
+    </div>
+  </div>`;
+}
+
+function adminSettingsView(){
+  const s = STATE.settings;
+  return `<h2 class="section-title">Settings</h2>
+    <div class="card">
+      <div class="toggle-row"><div><div class="tlabel">Ordering system</div><div class="tsub">Turn off to pause all new orders (e.g. fully booked, day off)</div></div>
+        <label class="switch"><input type="checkbox" id="orderingToggle" ${s.orderingEnabled?'checked':''}><span class="slider"></span></label></div>
+      <div class="rule"></div>
+      <div class="field"><label>Minimum advance notice (hours)</label><input type="number" id="leadHours" min="0.5" step="0.5" value="${s.minLeadHours}"></div>
+      <div class="hint">Customers can't request a time sooner than this from now.</div>
+    </div>
+    <div class="card"><h3 style="font-size:15px;margin-bottom:10px;">Tiffin pricing (one-time buyers / anything beyond a subscription's included quantity)</h3>
+      <div class="row2"><div class="field"><label>Veg tiffin — per portion</label><input type="number" min="0" step="0.5" id="priceVegTiffin" value="${s.tiffinPricing.veg}"></div>
+      <div class="field"><label>Non-Veg tiffin — per portion</label><input type="number" min="0" step="0.5" id="priceNonVegTiffin" value="${s.tiffinPricing.nonveg}"></div></div></div>
+    <div class="card"><h3 style="font-size:15px;margin-bottom:10px;">Subscription pricing &amp; included quantity (defaults for new subscribers)</h3>
+      <div class="row2"><div class="field"><label>Veg only — £/month</label><input type="number" min="0" step="1" id="priceSubVeg" value="${s.subscriptionPricing.veg}"></div>
+      <div class="field"><label>Veg only — included/order</label><input type="number" min="0" step="1" id="qtySubVeg" value="${s.subscriptionIncludedQty.veg}"></div></div>
+      <div class="row2"><div class="field"><label>Non-Veg only — £/month</label><input type="number" min="0" step="1" id="priceSubNonVeg" value="${s.subscriptionPricing.nonveg}"></div>
+      <div class="field"><label>Non-Veg only — included/order</label><input type="number" min="0" step="1" id="qtySubNonVeg" value="${s.subscriptionIncludedQty.nonveg}"></div></div>
+      <div class="row2"><div class="field"><label>Veg &amp; Non-Veg — £/month</label><input type="number" min="0" step="1" id="priceSubBoth" value="${s.subscriptionPricing.both}"></div>
+      <div class="field"><label>Veg &amp; Non-Veg — included/order</label><input type="number" min="0" step="1" id="qtySubBoth" value="${s.subscriptionIncludedQty.both}"></div></div>
+      <div class="hint">These are defaults offered when creating a new subscriber — each customer's included quantity can still be adjusted individually under Customers.</div>
+    </div>
+    <button class="btn gold" style="width:100%;" id="saveSettingsBtn">Save all settings</button>`;
+}
+
+/* ============================ EVENT DELEGATION ============================ */
+document.addEventListener('click', async (e)=>{
+  const t = e.target.closest('[data-act],[data-type],[data-id],[data-filter],[data-savedish],[data-delextra],[data-editcust],#placeOrderBtn,#addExtraBtn,#addCustBtn,#closeCustBtn,#saveSubBtn,#settleBtn,#saveSettingsBtn') || e.target;
+  try{
+    if(t.id==='placeOrderBtn'){ await placeOrder(); return; }
+    if(t.classList.contains('tQtyPlus')){ customerTiffin[t.dataset.type].qty++; render(); return; }
+    if(t.classList.contains('tQtyMinus')){ customerTiffin[t.dataset.type].qty = Math.max(1, customerTiffin[t.dataset.type].qty-1); render(); return; }
+    if(t.classList.contains('exPlus')){ customerCartExtras[t.dataset.id]=(customerCartExtras[t.dataset.id]||0)+1; render(); return; }
+    if(t.classList.contains('exMinus')){ const id=t.dataset.id; customerCartExtras[id]=Math.max(0,(customerCartExtras[id]||0)-1); if(customerCartExtras[id]===0) delete customerCartExtras[id]; render(); return; }
+    if(t.dataset.act && t.dataset.id){ await api(`/api/orders/${t.dataset.id}/status`,'PUT',{status:t.dataset.act==='confirm'?'confirmed':(t.dataset.act==='decline'?'declined':'delivered')}); await refresh(); return; }
+    if(t.dataset.payact && t.dataset.id){ await api(`/api/orders/${t.dataset.id}/payment`,'PUT',{paymentStatus:t.dataset.payact}); await refresh(); return; }
+    if(t.dataset.savedish){ await saveDish(t.dataset.savedish); return; }
+    if(t.id==='addExtraBtn'){ await addExtra(); return; }
+    if(t.dataset.delextra){ await api(`/api/extras/${t.dataset.delextra}`,'DELETE'); await refresh(); return; }
+    if(t.id==='addCustBtn'){ await addCustomer(); return; }
+    if(t.dataset.editcust){ document.getElementById('editCustPanel').innerHTML = editCustomerPanel(t.dataset.editcust); return; }
+    if(t.id==='closeCustBtn'){ document.getElementById('editCustPanel').innerHTML=''; return; }
+    if(t.id==='saveSubBtn'){ await saveSubscription(t.dataset.id); return; }
+    if(t.id==='settleBtn'){ await api(`/api/customers/${t.dataset.id}/settle`,'PUT'); document.getElementById('editCustPanel').innerHTML=''; await refresh(); return; }
+    if(t.id==='saveSettingsBtn'){ await saveSettings(); return; }
+    if(t.dataset.filter){ orderFilter = t.dataset.filter; render(); return; }
+  }catch(err){
+    alert(err.message || 'Something went wrong.');
+  }
+});
+
+document.addEventListener('change', async (e)=>{
+  const t = e.target;
+  try{
+    if(t.classList.contains('tiffinSel')){ customerTiffin[t.dataset.type].sel = t.checked; if(t.checked) customerTiffin[t.dataset.type].qty = customerTiffin[t.dataset.type].qty || 1; render(); }
+    if(t.id==='newCustBuyerType'){ document.getElementById('newCustSubFields').style.display = t.value==='subscription' ? 'block' : 'none'; }
+    if(t.id==='subActive'){ const f=document.getElementById('editSubFields'); if(f) f.style.display = t.value==='subscription' ? 'block' : 'none'; }
+    if(t.classList.contains('extraToggle')){ await api(`/api/extras/${t.dataset.id}`,'PUT',{available:t.checked}); await refresh(); }
+    if(t.classList.contains('extraEdit')){
+      const field = t.dataset.field; const val = field==='price' ? (parseFloat(t.value)||0) : t.value.trim();
+      await api(`/api/extras/${t.dataset.id}`,'PUT',{[field]: val});
+      // no full refresh here to avoid disrupting focus on rapid edits; local echo is enough visually until next refresh
+    }
+  }catch(err){ alert(err.message || 'Something went wrong.'); }
+});
+
+async function placeOrder(){
+  const errEl = document.getElementById('orderErr'); errEl.textContent='';
+  const reqInput = document.getElementById('requestedFor').value;
+  if(!reqInput){ errEl.textContent='Please choose a date and time.'; return; }
+  const selections = {
+    veg: { sel: customerTiffin.veg.sel, qty: customerTiffin.veg.qty },
+    nonveg: { sel: customerTiffin.nonveg.sel, qty: customerTiffin.nonveg.qty },
+    extras: {...customerCartExtras}
+  };
+  try{
+    await api('/api/orders','POST',{ selections, requestedFor: new Date(reqInput).toISOString() });
+    customerCartExtras = {}; customerTiffin = { veg:{sel:false,qty:1}, nonveg:{sel:false,qty:1} };
+    currentTab = 'myorders';
+    await refresh();
+  }catch(e){ errEl.textContent = e.message; }
+}
+
+async function saveDish(key){
+  const name = document.getElementById('dishName_'+key).value.trim();
+  const mode = document.getElementById('dishMode_'+key).value;
+  const available = document.getElementById('dishAvail_'+key).checked;
+  await api(`/api/dish/${key}`,'PUT',{name, mode, available});
+  await refresh();
+}
+async function addExtra(){
+  const name = document.getElementById('newExtraName').value.trim();
+  const category = document.getElementById('newExtraCat').value.trim() || 'Extras';
+  const price = parseFloat(document.getElementById('newExtraPrice').value) || 0;
+  if(!name) return;
+  await api('/api/extras','POST',{name, category, price});
+  await refresh();
+}
+async function addCustomer(){
+  const name = document.getElementById('newCustName').value.trim();
+  const phone = document.getElementById('newCustPhone').value.trim();
+  const username = document.getElementById('newCustUser').value.trim();
+  const password = document.getElementById('newCustPass').value;
+  const buyerType = document.getElementById('newCustBuyerType').value;
+  const err = document.getElementById('custErr'); err.textContent='';
+  if(!name || !username || !password){ err.textContent='Name, username and password are required.'; return; }
+  const isSub = buyerType==='subscription';
+  const subscription = {
+    active: isSub,
+    type: isSub ? document.getElementById('newCustSubType').value : 'veg',
+    startDate: isSub ? document.getElementById('newCustSubStart').value : isoDate(new Date()),
+    endDate: isSub ? document.getElementById('newCustSubEnd').value : isoDate(addDays(new Date(),30)),
+    includedQty: isSub ? (parseInt(document.getElementById('newCustSubQty').value)||1) : 1,
+    paymentStatus: isSub ? document.getElementById('newCustSubPay').value : 'due'
+  };
+  try{
+    await api('/api/customers','POST',{name, phone, username, password, subscription});
+    await refresh();
+  }catch(e){ err.textContent = e.message; }
+}
+async function saveSubscription(custId){
+  const isSub = document.getElementById('subActive').value === 'subscription';
+  const c = STATE.customers.find(u=>u.id===custId);
+  const prev = (c && c.subscription) || {};
+  const subscription = {
+    active: isSub,
+    type: isSub ? document.getElementById('subType').value : (prev.type||'veg'),
+    startDate: isSub ? document.getElementById('subStart').value : (prev.startDate||isoDate(new Date())),
+    endDate: isSub ? document.getElementById('subEnd').value : (prev.endDate||isoDate(addDays(new Date(),30))),
+    includedQty: isSub ? (parseInt(document.getElementById('subQty').value)||1) : (prev.includedQty||1),
+    paymentStatus: isSub ? document.getElementById('subPay').value : (prev.paymentStatus||'due')
+  };
+  await api(`/api/customers/${custId}/subscription`,'PUT', subscription);
+  document.getElementById('editCustPanel').innerHTML='';
+  await refresh();
+}
+async function saveSettings(){
+  await api('/api/settings','PUT',{
+    orderingEnabled: document.getElementById('orderingToggle').checked,
+    minLeadHours: parseFloat(document.getElementById('leadHours').value)||1,
+    tiffinPricing: { veg: parseFloat(document.getElementById('priceVegTiffin').value)||0, nonveg: parseFloat(document.getElementById('priceNonVegTiffin').value)||0 },
+    subscriptionPricing: { veg: parseFloat(document.getElementById('priceSubVeg').value)||0, nonveg: parseFloat(document.getElementById('priceSubNonVeg').value)||0, both: parseFloat(document.getElementById('priceSubBoth').value)||0 },
+    subscriptionIncludedQty: { veg: parseInt(document.getElementById('qtySubVeg').value)||0, nonveg: parseInt(document.getElementById('qtySubNonVeg').value)||0, both: parseInt(document.getElementById('qtySubBoth').value)||0 }
+  });
+  await refresh();
+}
+
+/* ============================ BOOT ============================ */
+(async function boot(){
+  if(TOKEN){
+    try{ await loadBootstrap(); }
+    catch(e){ TOKEN=null; localStorage.removeItem('ztiffin_token'); }
+  }
+  render();
+})();
+</script>
+</body>
+</html>
